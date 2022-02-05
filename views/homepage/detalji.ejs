@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Clean Blog - Start Bootstrap Theme</title>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <!-- Font Awesome icons (free version)-->
+    <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
+    <!-- Google fonts-->
+    <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet"
+        type="text/css" />
+    <link
+        href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800"
+        rel="stylesheet" type="text/css" />
+    <!-- Core theme CSS (includes Bootstrap)-->
+    <link href="/css/styles.css" rel="stylesheet" />
+</head>
+
+<body>
+    <!-- Navigation-->
+    <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+        <%- include('../_navigacija') %>
+    </nav>
+    <!-- Page Header-->
+    <header class="masthead" style="background-image: url('/images/knjige3.jpg')">
+        <div class="container position-relative px-4 px-lg-5">
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <div class="col-md-10 col-lg-8 col-xl-7">
+                    <div class="site-heading">
+                        <h1><%= knjiga.naziv %></h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- Main Content-->
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <!-- Post preview-->
+
+
+                    <div class="post-preview">
+                        <a>
+                            <h2 class="post-title"><%= knjiga.naziv %></h2>
+                            <h3 class="post-subtitle"><%= knjiga.kratikiSadrzaj %></h3>
+                        </a>
+                        <p class="post-meta">
+                            Datum izdanja: <%= knjiga.godinaIzdanja %>
+                        </p>
+
+                        <hr class="my-4" />
+
+                        <p class="post-meta">
+
+                            
+                            Kategorije:<br>
+                            <% for(var i = 0; i < imenaKategorija.length; i++) {%>
+                                <%= imenaKategorija[i] %>
+                                <% if(i != imenaKategorija.length - 1) {%>
+                                    , 
+                                    <% } %>
+                            <% } %>
+
+                        </p>
+
+                        <p class="post-meta">
+                            Broj stranica: <%= knjiga.stranica %>
+                        </p>
+
+                        <p class="post-meta">
+                            Datum izdanja: <%= knjiga.godinaIzdanja %>
+                        </p>
+
+                        <p class="post-meta">
+                            Online izdanje: <%= knjiga.onlineIzdanje == '' ? 'ne postoji' : 'postoji' %>
+                        </p>
+
+                        <p class="post-meta">
+                            <%= knjiga.dimenzije == '' ? '' : "Dimenzija knjige: " + knjiga.dimenzije %>
+                        </p>
+
+                        <hr class="my-4" />
+
+                        <div class="post-meta">
+                            <b>Pisci:</b>
+                            <br><br>
+                            <% if(!pisci.length) { %>
+                                Nepoznati autori
+                            <% } %>
+                        <% pisci.forEach(pisac=> { %>
+                            <%= pisac.ime %> <%= pisac.prezime %> rođen/na u mjestu <%= pisac.mjestoRodenja %>
+                            <br>Mini bio o piscu:
+                            <br>
+                            <%= pisac.miniBio %>
+                            <br><br>
+                        <% }) %>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <a>
+                            <h3 class="post-subtitle">Komentari:</h3>
+                            <% if(!ocjene.length) { %>
+                                Ne postoji niti jedan komentar za navedenu knjigu
+                            <% } %>
+                            <% counter = 0 %>
+                            <% ocjene.forEach(ocjena=> { %>
+                                <b> <%= username[counter] %> </b> 
+                                <br>
+                                Ocjena: <%= ocjena.ocjena %> 
+                                <br>
+                                Komentar: <%= ocjena.komentar %>
+                                <br><br>
+                                <% counter++ %>
+                            <% }) %>
+                        </a>
+
+                        <hr class="my-4" />
+
+                        <a>
+                            <h3 class="post-subtitle">Preporuke:</h3>
+                            <% nemaPreporuke = true %>
+                            <% for(var i = 0; i < preporuka.length; i++) { %>
+                                <% preporuka[i].forEach(knjiga=> { %>
+                                    <%= knjiga.naziv %> <br>
+                                    <% nemaPreporuke = false %>
+                                <% }) %>
+                            <% } %>
+                            <% if(nemaPreporuke) { %>
+                                Ne postoji niti jedna preporuka u našoj bazi podataka :(
+                            <% } %>
+                        </a>
+
+                    </div>
+                    <!-- Divider-->
+                    <hr class="my-4" />
+
+                <!-- Pager-->
+                <div class="d-flex justify-content-end mb-4">
+
+
+                    <a class="btn btn-danger" href="/ocjene/ocjeni/<%= knjiga.id %>">
+                        DODAJ KOMENTAR
+                    </a>
+                    <a class="btn btn-primary text-uppercase" href="/homepage/prikazi">
+                        Sve knjige
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Footer-->
+    <%- include('../_fotter') %>
+    <!-- Bootstrap core JS-->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Core theme JS-->
+</body>
+
+</html>

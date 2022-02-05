@@ -1,0 +1,26 @@
+{
+  "name": "web_knjige",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "devStart": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dompurify": "^2.3.5",
+    "ejs": "^3.0.1",
+    "express": "^4.17.1",
+    "express-session": "^1.17.2",
+    "jsdom": "^19.0.0",
+    "marked": "^4.0.12",
+    "method-override": "^3.0.0",
+    "mongoose": "^5.9.4",
+    "slugify": "^1.6.5"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2"
+  }
+}

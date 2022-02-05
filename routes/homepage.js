@@ -59,7 +59,6 @@ router.get('/detalji/:id', async (req, res) => {
         }
         
     }
-console.log(preporuke)
     const knjiga = await Knjiga.findById(idKnjige)
     res.render('homepage/detalji', { knjiga: knjiga, imenaKategorija: imenaKategorija, pisci: imenaPisaca, ocjene: ocjene, username: usernameKomentara, preporuka: preporuke })
 })

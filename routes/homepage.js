@@ -10,7 +10,13 @@ const router = express.Router()
 
 router.get('/prikazi', async (req, res) => {
     const knjige = await Knjiga.find()
-    res.render('homepage/homepage', { knjige: knjige })
+    let pristup
+    if (req.session.uloga == 2) {
+        pristup = true
+    } else {
+        pristup = false
+    }
+    res.render('homepage/homepage', { knjige: knjige, pristup: pristup })
 })
 
 router.get('/detalji/:id', async (req, res) => {
@@ -49,7 +55,7 @@ router.get('/detalji/:id', async (req, res) => {
                 let ukupnaOcjena = 0
                 for (let z = 0; z < podaciOcjenama.length; z++) {
                     ukupnaOcjena += podaciOcjenama[z].ocjena
-                    
+
                 }
                 if (ukupnaOcjena > (10 * podaciOcjenama.length) / 2) {
                     preporuke[i][brojac] = await Knjiga.findById(preporukaPosjedovanja[j].idKnjige)
@@ -57,10 +63,25 @@ router.get('/detalji/:id', async (req, res) => {
                 brojac++
             }
         }
-        
     }
+
+    let pristup
+    if (req.session.uloga == 2) {
+        pristup = true
+    } else {
+        pristup = false
+    }
+
     const knjiga = await Knjiga.findById(idKnjige)
-    res.render('homepage/detalji', { knjiga: knjiga, imenaKategorija: imenaKategorija, pisci: imenaPisaca, ocjene: ocjene, username: usernameKomentara, preporuka: preporuke })
+    res.render('homepage/detalji', {
+        knjiga: knjiga,
+        imenaKategorija: imenaKategorija,
+        pisci: imenaPisaca,
+        ocjene: ocjene,
+        username: usernameKomentara,
+        preporuka: preporuke,
+        pristup: pristup,
+    })
 })
 
 

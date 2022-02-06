@@ -9,7 +9,11 @@ const router = express.Router()
 
 router.get('/prikazi', async (req, res) => {
     const knjige = await Knjiga.find()
-    res.render('knjiga/knjiga', { knjige: knjige })
+    if (req.session.uloga == 2) {
+        res.render('knjiga/knjiga', { knjige: knjige })
+    } else {
+        res.render('homepage/homepage', { knjige: knjige })
+    }
 })
 
 router.get('/dodajnovu', async (req, res) => {
@@ -38,7 +42,7 @@ router.get('/detalji/:id', async (req, res) => {
             imenaKategorija += kategorija.naziv
         }
     }
-    res.render('knjiga/detalji', { knjiga: knjiga, imenaKategorija: imenaKategorija, pisci: imenaPisaca})
+    res.render('knjiga/detalji', { knjiga: knjiga, imenaKategorija: imenaKategorija, pisci: imenaPisaca })
 })
 
 router.get('/edit/:id', async (req, res) => {

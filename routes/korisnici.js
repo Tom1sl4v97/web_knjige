@@ -28,8 +28,9 @@ router.post('/', async (req, res, next) => {
 
         const knjige = await Knjiga.find()
         req.session.username = req.body.username
+        req.session.uloga = 1
 
-        res.render('homepage/homepage', { knjige: knjige })
+        res.render('homepage/homepage', { knjige: knjige, pristup: false })
     } catch (e) {
         console.log(e)
         res.render('registration/registration', { korisnik: korisnik })
@@ -47,7 +48,16 @@ router.post('/login', async (req, res) => {
         } else {
             const knjige = await Knjiga.find()
             req.session.username = korisničkoIme
-            res.render('homepage/homepage', { knjige: knjige })
+            req.session.uloga = korisnik.uloga
+
+            let pristup
+            if (korisnik.uloga == 2) {
+                pristup = true
+            } else {
+                pristup = false
+            }
+
+            res.render('homepage/homepage', { knjige: knjige, pristup: pristup })
         }
     }
 

@@ -1,11 +1,17 @@
 const express = require('express')
 const Kategorija = require('./../models/kategorija')
+const Knjiga = require('./../models/knjiga')
 const router = express.Router()
 
 
 router.get('/prikazi', async (req, res) => {
-    const kategorije = await Kategorija.find()
-    res.render('kategorija/kategorija', { kategorije: kategorije })
+    if (req.session.uloga == 2) {
+        const kategorije = await Kategorija.find()
+        res.render('kategorija/kategorija', { kategorije: kategorije })
+    } else {
+        const knjige = await Knjiga.find()
+        res.render('homepage/homepage', { knjige: knjige })
+    }
 })
 
 router.get('/dodajnovu', (req, res) => {

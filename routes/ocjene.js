@@ -14,7 +14,7 @@ router.get('/ocjeni/:id', async (req, res) => {
         pristup = false
     }
 
-    res.render('ocjena/ocjena', { knjiga: knjiga , pristup: pristup})
+    res.render('ocjena/ocjena', { knjiga: knjiga, pristup: pristup })
 })
 
 
@@ -25,13 +25,20 @@ router.post('/:id', async (req, res, next) => {
 
 function spremiOcjenu() {
     return async (req, res) => {
+        let pristup
+        if (req.session.uloga == 2) {
+            pristup = true
+        } else {
+            pristup = false
+        }
+
         const idKnjiga = req.idKnjiga
         const logiraniKorisnik = req.session.username
         const korisnik = await Korisnik.findOne({ username: logiraniKorisnik })
 
         let ocjena = await Ocjena.findOne({ idKnjige: idKnjiga, idKorisnika: korisnik.id })
 
-        if (!ocjena){
+        if (!ocjena) {
             ocjena = new Ocjena()
         }
 
@@ -44,11 +51,11 @@ function spremiOcjenu() {
             ocjena = await ocjena.save()
 
             const knjige = await Knjiga.find()
-            res.render('homepage/homepage', { knjige: knjige })
+            res.render('homepage/homepage', { knjige: knjige, pristup: pristup })
         } catch (e) {
             console.log(e)
             const knjiga = await Knjiga.findById(idKnjiga)
-            res.render('ocjena/ocjena', { knjiga: knjiga })
+            res.render('ocjena/ocjena', { knjiga: knjiga, pristup: pristup })
         }
     }
 }

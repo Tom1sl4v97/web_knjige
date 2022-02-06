@@ -142,7 +142,7 @@
                             <% nemaPreporuke = true %>
                             <% for(var i = 0; i < preporuka.length; i++) { %>
                                 <% preporuka[i].forEach(knjiga=> { %>
-                                    <%= knjiga.naziv %> <br>
+                                    <a href="/homepage/detalji/<%= knjiga.id %>"> <%= knjiga.naziv %> </a> <br>
                                     <% nemaPreporuke = false %>
                                 <% }) %>
                             <% } %>
@@ -157,8 +157,6 @@
 
                 <!-- Pager-->
                 <div class="d-flex justify-content-end mb-4">
-
-
                     <a class="btn btn-danger" href="/ocjene/ocjeni/<%= knjiga.id %>">
                         DODAJ KOMENTAR
                     </a>

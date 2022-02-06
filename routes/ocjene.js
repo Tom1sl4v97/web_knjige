@@ -6,7 +6,15 @@ const router = express.Router()
 
 router.get('/ocjeni/:id', async (req, res) => {
     const knjiga = await Knjiga.findById(req.params.id)
-    res.render('ocjena/ocjena', { knjiga: knjiga })
+
+    let pristup
+    if (req.session.uloga == 2) {
+        pristup = true
+    } else {
+        pristup = false
+    }
+
+    res.render('ocjena/ocjena', { knjiga: knjiga , pristup: pristup})
 })
 
 
@@ -31,8 +39,6 @@ function spremiOcjenu() {
         ocjena.komentar = req.body.komentar
         ocjena.idKnjige = idKnjiga
         ocjena.idKorisnika = korisnik.id
-
-
 
         try {
             ocjena = await ocjena.save()

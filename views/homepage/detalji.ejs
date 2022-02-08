@@ -75,10 +75,10 @@
                             
                             Kategorije:<br>
                             <% for(var i = 0; i < imenaKategorija.length; i++) {%>
-                                <%= imenaKategorija[i] %>
+                                <%=imenaKategorija[i]%>
                                 <% if(i != imenaKategorija.length - 1) {%>
-                                    , 
-                                    <% } %>
+                                    ,
+                                <% } %>
                             <% } %>
 
                         </p>
@@ -140,20 +140,20 @@
                         <a>
                             <h3 class="post-subtitle">Preporuke:</h3>
                             <% nemaPreporuke = true %>
-                            <% for(var i = 0; i < preporuka.length; i++) { %>
-                                <% preporuka[i].forEach(knjiga=> { %>
-                                    <a href="/homepage/detalji/<%= knjiga.id %>"> <%= knjiga.naziv %> </a> <br>
+                                <% preporuka.forEach(knjiga=> { %>
+                                    <a href="/homepage/detalji/<%= knjiga.id %>">
+                                        <h3 class="post-title"><%= knjiga.naziv %></h2>
+                                        <h4 class="post-subtitle"><%= knjiga.kratikiSadrzaj %></h3>
+                                    </a>
+                                    <hr class="my-4" />
                                     <% nemaPreporuke = false %>
                                 <% }) %>
-                            <% } %>
                             <% if(nemaPreporuke) { %>
                                 Ne postoji niti jedna preporuka u našoj bazi podataka :(
                             <% } %>
                         </a>
 
                     </div>
-                    <!-- Divider-->
-                    <hr class="my-4" />
 
                 <!-- Pager-->
                 <div class="d-flex justify-content-end mb-4">

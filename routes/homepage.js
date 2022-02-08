@@ -37,30 +37,36 @@ router.get('/detalji/:id', async (req, res) => {
     }
 
     const posjeduje = await Posjeduje.find({ idKnjige: idKnjige })
-    let imenaKategorija = new Array(posjeduje.length)
+    let imenaKategorija = []
     for (let i = 0; i < posjeduje.length; i++) {
         let kategorija = await Kategorija.findById(posjeduje[i].idKategorije)
-
-        imenaKategorija[i] = kategorija.naziv
+        imenaKategorija.push(kategorija.naziv)
     }
 
-    let preporuke = new Array(posjeduje.length)
+    let preporuke = []
     for (let i = 0; i < posjeduje.length; i++) {
         let preporukaPosjedovanja = await Posjeduje.find({ idKategorije: posjeduje[i].idKategorije })
-        let brojac = 0
-        preporuke[i] = new Array()
         for (let j = 0; j < preporukaPosjedovanja.length; j++) {
             if (preporukaPosjedovanja[j].idKnjige != idKnjige) {
                 let podaciOcjenama = await Ocjena.find({ idKnjige: preporukaPosjedovanja[j].idKnjige })
                 let ukupnaOcjena = 0
                 for (let z = 0; z < podaciOcjenama.length; z++) {
                     ukupnaOcjena += podaciOcjenama[z].ocjena
+                }
 
+                let postojiVec = true
+                for (let k = 0; k < preporuke.length; k++) {
+                    if (preporuke[k].id == preporukaPosjedovanja[j].idKnjige) {
+                        postojiVec = false
+                    }
                 }
-                if (ukupnaOcjena > (10 * podaciOcjenama.length) / 2) {
-                    preporuke[i][brojac] = await Knjiga.findById(preporukaPosjedovanja[j].idKnjige)
+                if ((ukupnaOcjena / podaciOcjenama.length) >= 5) {
+                    if (postojiVec) {
+                        
+                        let knjiga = await Knjiga.findById(preporukaPosjedovanja[j].idKnjige)
+                        preporuke.push(knjiga)
+                    }
                 }
-                brojac++
             }
         }
     }

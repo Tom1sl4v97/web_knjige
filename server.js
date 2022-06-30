@@ -11,7 +11,7 @@ const ocjeneRouter = require('./routes/ocjene')
 const methodOverride = require('method-override')
 const app = express()
 
-mongoose.connect('mongodb+srv://ttomiek:TomislavRPK@cluster0.fpgq8.mongodb.net/myFirstDatabase?retryWrites=true&w=majority', 
+mongoose.connect('mongodb+srv://ttomiek:TomislavTBP@cluster0.fpgq8.mongodb.net/myFirstDatabase?retryWrites=true&w=majority', 
 { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true })
 
 app.set('view engine', 'ejs')

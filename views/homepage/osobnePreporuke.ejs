@@ -23,23 +23,22 @@
 <body>
     <!-- Navigation-->
     <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
-        <% if (pristup) { %>
-        <%- include('../_navigacija') %>
-        <% } else { %>
-            <div class="container px-4 px-lg-5">
-                <a class="navbar-brand" href="/homepage/prikazi">Početna stranica</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-                    Menu
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarResponsive">
-                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
-                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="/knjige/preporuke">Moje preporuke</a></li>
-                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="/korisnici/odjava">Odjava</a></li>
-                    </ul>
-                </div>
+        <div class="container px-4 px-lg-5">
+            <a class="navbar-brand" href="/homepage/prikazi">Početna stranica</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive"
+                aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                Menu
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                    <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="/knjige/preporuke">Moje
+                            preporuke</a></li>
+                    <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="/korisnici/odjava">Odjava</a>
+                    </li>
+                </ul>
             </div>
-        <% } %>
+        </div>
     </nav>
     <!-- Page Header-->
     <header class="masthead" style="background-image: url('/images/knjige3.jpg')">
@@ -47,8 +46,7 @@
             <div class="row gx-4 gx-lg-5 justify-content-center">
                 <div class="col-md-10 col-lg-8 col-xl-7">
                     <div class="site-heading">
-                        <h1>Knjige</h1>
-                        <span class="subheading">Tomislav Tomiek</span>
+                        <h1>Osobne preporuke</h1>
                     </div>
                 </div>
             </div>
@@ -60,19 +58,20 @@
             <div class="col-md-10 col-lg-8 col-xl-7">
                 <!-- Post preview-->
 
+                <h2>Knjige koje bi Vam preporučili na temelju Vaših ocjenjenih komentara ostalih knjiga:</h2>
 
-                <% knjige.forEach(knjiga=> { %>
+                <% preporucaneKnjige.forEach(knjiga=> { %>
                     <div class="post-preview">
-                        <a href="/homepage/detalji/<%= knjiga.id %>">
+                        <a href="/homepage/detalji/<%= knjiga._id %>">
                             <h2 class="post-title">
                                 <%= knjiga.naziv %>
                             </h2>
                             <h3 class="post-subtitle">
-                                <%= knjiga.kratikiSadrzaj %>
+                                Postotak preporučljivosti: <%= knjiga.postotak %>% (<%= knjiga.konacnaOcjena %>/<%= knjiga.maksimalnaOcjena %>)
                             </h3>
                         </a>
                         <p class="post-meta">
-                            Datum publiciranja <%= knjiga.godinaIzdanja %>
+                            Kategorija/e: <%= knjiga.nazivKategorije %>
                         </p>
                     </div>
                     <!-- Divider-->

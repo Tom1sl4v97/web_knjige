@@ -1,10 +1,12 @@
 const express = require('express')
 const Knjiga = require('./../models/knjiga')
+const Korisnik = require('./../models/korisnik')
 const Kategorija = require('./../models/kategorija')
 const Posjeduje = require('./../models/posjeduje')
 const Pisac = require('./../models/pisac')
 const Napisao = require('./../models/napisao')
 const Ocjena = require('./../models/ocjena')
+const posjeduje = require('./../models/posjeduje')
 const router = express.Router()
 
 router.get('/prikazi', async (req, res) => {
@@ -81,10 +83,10 @@ function spremiKnjigu(path) {
         }
         knjiga.kratikiSadrzaj = req.body.kratikiSadrzaj
 
-        let brojKnjiga = req.body.kategorija
+        let brojKategorijaKnjiga = req.body.kategorija
 
-        if (typeof brojKnjiga === 'string') {
-            brojKnjiga = [req.body.kategorija]
+        if (typeof brojKategorijaKnjiga === 'string') {
+            brojKategorijaKnjiga = [req.body.kategorija]
         }
 
         try {
@@ -96,10 +98,10 @@ function spremiKnjigu(path) {
                 await Posjeduje.findByIdAndDelete(posjeduje[i].id)
             }
 
-            for (let i = 0; i < brojKnjiga.length; i++) {
+            for (let i = 0; i < brojKategorijaKnjiga.length; i++) {
                 posjeduje = new Posjeduje()
                 posjeduje.idKnjige = knjiga.id
-                posjeduje.idKategorije = brojKnjiga[i]
+                posjeduje.idKategorije = brojKategorijaKnjiga[i]
 
                 posjeduje = await posjeduje.save()
             }
@@ -136,5 +138,114 @@ router.delete('/:id', async (req, res) => {
     const knjige = await Knjiga.find()
     res.render('knjiga/knjiga', { knjige: knjige })
 })
+
+router.get('/preporuke', async (req, res) => {
+    if (req.session.username) {
+        preporucaneKnjige = await algoritamPreporuke(req)
+        res.render('homepage/osobnePreporuke', { preporucaneKnjige: Array.from(preporucaneKnjige) })
+    } else {
+        res.render('login/login', { error: '' })
+    }
+})
+
+async function algoritamPreporuke(req) {
+    /*  Prvo je potrebno pronaći korisnika, preko korisničkog imena od sesije, zatim se
+        pronalaze svi komentari korinika. */
+    const logiraniKorisnik = req.session.username
+    const korisnik = await Korisnik.findOne({ username: logiraniKorisnik })
+    const popisOcjenaKorisnika = await Ocjena.find({ idKorisnika: korisnik.id })
+
+    /*  Kreira se nova lista koja sadrži id kateogrije i dodijeljenu ocjenu kategorije,
+        gdje može doći do duplih zapisa kategorije, koje će se kasnije filtrirati i
+        zbrojiti ocjene */
+    var listaOcjeneKategorija = []
+    for (var i in popisOcjenaKorisnika) {
+        var kategorijeKnjige = await Posjeduje.find({ idKnjige: popisOcjenaKorisnika[i].idKnjige })
+        for (j in kategorijeKnjige) {
+            var elementKnjige = {}
+            elementKnjige.idKategorije = kategorijeKnjige[j].idKategorije
+            elementKnjige.ocjena = popisOcjenaKorisnika[i].ocjena
+            listaOcjeneKategorija.push(elementKnjige)
+        }
+    }
+
+    /*  Prvo dohvaćam popis svih kategorija, gdje svakoj kategoriji dodajem i zbrajam,
+        iz prethodne liste, ocjene i računam faktor maksimalne ocjene za svaku ocjenjenu
+        kategoriju. */
+    const popisKategorija = await Kategorija.find()
+    var popisKategorijeOcjena = []
+    for (var i in popisKategorija) {
+        idTrenutneKategorije = popisKategorija[i].id
+
+        var ocjeneKaterogije = listaOcjeneKategorija.filter(i => i.idKategorije == idTrenutneKategorije).length
+        var ukupnaOcjena = listaOcjeneKategorija.filter(i => i.idKategorije == idTrenutneKategorije).reduce((a, b) => a + b.ocjena, 0)
+        var konacnaOcjena = ((ukupnaOcjena / 10).toFixed(2) * ukupnaOcjena).toFixed(2)
+
+        var noviElement = popisKategorija[i].toObject()
+        noviElement.idKategorije = idTrenutneKategorije
+        noviElement.konacnaOcjena = konacnaOcjena
+        noviElement.maksimalnaOcjena = ocjeneKaterogije * 10 * ocjeneKaterogije
+        popisKategorijeOcjena.push(noviElement)
+    }
+
+    /*  Tražimo sve nekomentirane / ne ocijenjene knjige od korisnika, koji zadovoljavaju
+        prethodno ocjenjene kategorije ostalih knjiga, koje je korisnik već ocijenio. */
+    var popisKnjigaPreporuke = []
+    const popisSvihKnjiga = await Knjiga.find()
+    for (var i in popisSvihKnjiga) {
+        var idKnjige = popisSvihKnjiga[i].id
+        var ocjenioKnjigu = popisOcjenaKorisnika.filter(i => i.idKnjige == idKnjige)
+        /* Gledaju se samo ne ocjenjene knjige. */
+        if (ocjenioKnjigu.length === 0) {
+            var kategorijeKnjige = await Posjeduje.find({ idKnjige: popisSvihKnjiga[i].id })
+            var faktorOcjeneKnjige = 0
+            var maksimalniFaktorOcjene = 0
+            /* Zbrajanje svih kateogije u jednu kategoriju sa ukupnim faktorom ocjene. */
+            for (var j in kategorijeKnjige) {
+                var kategorijaKnjige = popisKategorijeOcjena.find(i => i.idKategorije == kategorijeKnjige[j].idKategorije)
+                faktorOcjeneKnjige += parseFloat(kategorijaKnjige.konacnaOcjena)
+                maksimalniFaktorOcjene += parseFloat(kategorijaKnjige.maksimalnaOcjena)
+            }
+            /* Provjeravamo ako je korisnik ocijenio određenu kateogirju. Ako je faktor ocjene nula, 
+                to znači da korisnik nije ocjenio određenu kateoriju knjige, ako je veća od nule,
+                onda se dodaje u listu preporuke. */
+            if (parseFloat(faktorOcjeneKnjige) > 0) {
+                var elementKnjige = popisSvihKnjiga[i].toObject()
+                elementKnjige.konacnaOcjena = faktorOcjeneKnjige
+                elementKnjige.maksimalnaOcjena = maksimalniFaktorOcjene
+                elementKnjige.postotak = (faktorOcjeneKnjige / maksimalniFaktorOcjene * 100).toFixed(2)
+                popisKnjigaPreporuke.push(elementKnjige)
+            }
+        }
+
+    }
+    popisKnjigaPreporuke.sort(sortiranjeListe)
+
+    for (var i in popisKnjigaPreporuke) {
+        var popisKategorijaPreporuke = await Posjeduje.find({ idKnjige: popisKnjigaPreporuke[i]._id })
+        var stringKategorije = ""
+        for (var j in popisKategorijaPreporuke) {
+            var podaciKateogirje = await Kategorija.findById(popisKategorijaPreporuke[j].idKategorije)
+            if (j == (popisKategorijaPreporuke.length - 1)){
+                stringKategorije += podaciKateogirje.naziv
+            } else {
+                stringKategorije += podaciKateogirje.naziv + ", "
+            }
+        }
+        popisKnjigaPreporuke[i].nazivKategorije = stringKategorije
+    }
+
+    return popisKnjigaPreporuke
+}
+
+function sortiranjeListe(a, b) {
+    if (a.postotak > b.postotak) {
+        return -1
+    }
+    if (a.postotak < b.postotak) {
+        return 1;
+    }
+    return 0;
+}
 
 module.exports = router

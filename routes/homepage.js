@@ -22,6 +22,7 @@ router.get('/prikazi', async (req, res) => {
 router.get('/detalji/:id', async (req, res) => {
     const idKnjige = req.params.id
 
+    /*  Dohvaćam sve komentare / ocjene korisnika za određenu knjigu. */
     const ocjene = await Ocjena.find({ idKnjige: idKnjige })
     let usernameKomentara = new Array(ocjene.length)
     for (let i = 0; i < ocjene.length; i++) {
@@ -29,6 +30,7 @@ router.get('/detalji/:id', async (req, res) => {
         usernameKomentara[i] = korisnik.username
     }
 
+    /*  Dohvaćam listu pisaca za traženu knjigu. */
     const napisao = await Napisao.find({ idKnjige: idKnjige })
     let imenaPisaca = []
     for (let i = 0; i < napisao.length; i++) {
@@ -36,6 +38,8 @@ router.get('/detalji/:id', async (req, res) => {
         imenaPisaca.push(pisac)
     }
 
+    /*  Dohvaćam popis naziva svih kategorije određene knjige, pošto
+        pojedina knjima može sadržavati jednu ili više kateogrija. */
     const posjeduje = await Posjeduje.find({ idKnjige: idKnjige })
     let imenaKategorija = []
     for (let i = 0; i < posjeduje.length; i++) {
@@ -43,6 +47,11 @@ router.get('/detalji/:id', async (req, res) => {
         imenaKategorija.push(kategorija.naziv)
     }
 
+    /*  Filtriram knjige koje se mogu preporućiti. Određene knjige koje imaju
+        prosječnu ocjenu veću od polovice ocjene, znači veće od 5, će se
+        prikazati kod preporuke knjige. Uz to gledaju se samo knjige sa 
+        kategorijama trenutne otvorene knjige. Duplikati knjiga se također filtrira,
+        te se prikazuje samo jednom. */
     let preporuke = []
     for (let i = 0; i < posjeduje.length; i++) {
         let preporukaPosjedovanja = await Posjeduje.find({ idKategorije: posjeduje[i].idKategorije })
@@ -62,7 +71,6 @@ router.get('/detalji/:id', async (req, res) => {
                 }
                 if ((ukupnaOcjena / podaciOcjenama.length) >= 5) {
                     if (postojiVec) {
-                        
                         let knjiga = await Knjiga.findById(preporukaPosjedovanja[j].idKnjige)
                         preporuke.push(knjiga)
                     }
@@ -71,6 +79,7 @@ router.get('/detalji/:id', async (req, res) => {
         }
     }
 
+    /* Određivanje privilegije pristupa određenoj stranici. */
     let pristup
     if (req.session.uloga == 2) {
         pristup = true
@@ -78,7 +87,10 @@ router.get('/detalji/:id', async (req, res) => {
         pristup = false
     }
 
+    /* Dohvaćanje podataka o traženoj knjizi. */
     const knjiga = await Knjiga.findById(idKnjige)
+
+    /* Dodjela potrebnih podataka pogledima. */
     res.render('homepage/detalji', {
         knjiga: knjiga,
         imenaKategorija: imenaKategorija,

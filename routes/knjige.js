@@ -221,6 +221,8 @@ async function algoritamPreporuke(req) {
     }
     popisKnjigaPreporuke.sort(sortiranjeListe)
 
+    /*  Dohvaćam string naziva kateogrija za svaku pojedinu knjigu 
+        koja se nalazi u listi preporuke. */
     for (var i in popisKnjigaPreporuke) {
         var popisKategorijaPreporuke = await Posjeduje.find({ idKnjige: popisKnjigaPreporuke[i]._id })
         var stringKategorije = ""
@@ -238,6 +240,8 @@ async function algoritamPreporuke(req) {
     return popisKnjigaPreporuke
 }
 
+/*  Funkcija za sortiranje liste po faktoru ocjene, točnije postotak 
+    sličnosti knjiga. */
 function sortiranjeListe(a, b) {
     if (a.postotak > b.postotak) {
         return -1

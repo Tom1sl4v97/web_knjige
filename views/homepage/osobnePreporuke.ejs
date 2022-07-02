@@ -58,25 +58,29 @@
             <div class="col-md-10 col-lg-8 col-xl-7">
                 <!-- Post preview-->
 
-                <h2>Knjige koje bi Vam preporučili na temelju Vaših ocjenjenih komentara ostalih knjiga:</h2>
-
-                <% preporucaneKnjige.forEach(knjiga=> { %>
-                    <div class="post-preview">
-                        <a href="/homepage/detalji/<%= knjiga._id %>">
-                            <h2 class="post-title">
-                                <%= knjiga.naziv %>
-                            </h2>
-                            <h3 class="post-subtitle">
-                                Postotak preporučljivosti: <%= knjiga.postotak %>% (<%= knjiga.konacnaOcjena %>/<%= knjiga.maksimalnaOcjena %>)
-                            </h3>
-                        </a>
-                        <p class="post-meta">
-                            Kategorija/e: <%= knjiga.nazivKategorije %>
-                        </p>
-                    </div>
-                    <!-- Divider-->
-                    <hr class="my-4" />
-                    <% }) %>
+                <% if (preporucaneKnjige.length == 0) { %>
+                    <h2>Molimo Vas ocijenite jednu ili više knjiga kako bi smo znali otprilike Vaš ukus knjiga, pa se vratite. </h2>
+                <% } else { %>
+                    <h2>Knjige koje bi Vam preporučili na temelju Vaših ocjenjenih komentara ostalih knjiga: </h2>
+                <% } %>
+                    <% preporucaneKnjige.forEach(knjiga=> { %>
+                        <div class="post-preview">
+                            <a href="/homepage/detalji/<%= knjiga._id %>">
+                                <h2 class="post-title">
+                                    <%= knjiga.naziv %>
+                                </h2>
+                                <h3 class="post-subtitle">
+                                    Postotak preporučljivosti: <%= knjiga.postotak %>% (<%=
+                                            knjiga.konacnaOcjena %>/<%= knjiga.maksimalnaOcjena %>)
+                                </h3>
+                            </a>
+                            <p class="post-meta">
+                                Kategorija/e: <%= knjiga.nazivKategorije %>
+                            </p>
+                        </div>
+                        <!-- Divider-->
+                        <hr class="my-4" />
+                        <% }) %>
             </div>
         </div>
     </div>

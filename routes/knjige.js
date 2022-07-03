@@ -141,104 +141,98 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/preporuke', async (req, res) => {
     if (req.session.username) {
-        preporucaneKnjige = await algoritamPreporuke(req)
-        res.render('homepage/osobnePreporuke', { preporucaneKnjige: Array.from(preporucaneKnjige) })
+        /*  Prvo je potrebno pronaći korisnika, preko korisničkog imena od sesije, zatim se
+        pronalaze svi komentari korinika. */
+        const logiraniKorisnik = req.session.username
+        const korisnik = await Korisnik.findOne({ username: logiraniKorisnik })
+        const popisOcjenaKorisnika = await Ocjena.find({ idKorisnika: korisnik.id })
+
+        /*  Kreira se nova lista koja sadrži id kateogrije i dodijeljenu ocjenu kategorije,
+            gdje može doći do duplih zapisa kategorije, koje će se kasnije filtrirati i
+            zbrojiti ocjene */
+        var listaOcjeneKategorija = []
+        for (var i in popisOcjenaKorisnika) {
+            var kategorijeKnjige = await Posjeduje.find({ idKnjige: popisOcjenaKorisnika[i].idKnjige })
+            for (j in kategorijeKnjige) {
+                var elementKnjige = {}
+                elementKnjige.idKategorije = kategorijeKnjige[j].idKategorije
+                elementKnjige.ocjena = popisOcjenaKorisnika[i].ocjena
+                listaOcjeneKategorija.push(elementKnjige)
+            }
+        }
+
+        /*  Prvo dohvaćam popis svih kategorija, gdje svakoj kategoriji dodajem i zbrajam,
+            iz prethodne liste, ocjene i računam faktor maksimalne ocjene za svaku ocjenjenu
+            kategoriju. */
+        const popisKategorija = await Kategorija.find()
+        var popisKategorijeOcjena = []
+        for (var i in popisKategorija) {
+            idTrenutneKategorije = popisKategorija[i].id
+
+            var ocjeneKaterogije = listaOcjeneKategorija.filter(i => i.idKategorije == idTrenutneKategorije).length
+            var ukupnaOcjena = listaOcjeneKategorija.filter(i => i.idKategorije == idTrenutneKategorije).reduce((a, b) => a + b.ocjena, 0)
+            var konacnaOcjena = ((ukupnaOcjena / 10).toFixed(2) * ukupnaOcjena).toFixed(2)
+
+            var noviElement = popisKategorija[i].toObject()
+            noviElement.idKategorije = idTrenutneKategorije
+            noviElement.konacnaOcjena = konacnaOcjena
+            noviElement.maksimalnaOcjena = ocjeneKaterogije * 10 * ocjeneKaterogije
+            popisKategorijeOcjena.push(noviElement)
+        }
+
+        /*  Tražimo sve nekomentirane / ne ocijenjene knjige od korisnika, koji zadovoljavaju
+            prethodno ocjenjene kategorije ostalih knjiga, koje je korisnik već ocijenio. */
+        var popisKnjigaPreporuke = []
+        const popisSvihKnjiga = await Knjiga.find()
+        for (var i in popisSvihKnjiga) {
+            var idKnjige = popisSvihKnjiga[i].id
+            var ocjenioKnjigu = popisOcjenaKorisnika.filter(i => i.idKnjige == idKnjige)
+            /* Gledaju se samo ne ocjenjene knjige. */
+            if (ocjenioKnjigu.length === 0) {
+                var kategorijeKnjige = await Posjeduje.find({ idKnjige: popisSvihKnjiga[i].id })
+                var faktorOcjeneKnjige = 0
+                var maksimalniFaktorOcjene = 0
+                /* Zbrajanje svih kateogije u jednu kategoriju sa ukupnim faktorom ocjene. */
+                for (var j in kategorijeKnjige) {
+                    var kategorijaKnjige = popisKategorijeOcjena.find(i => i.idKategorije == kategorijeKnjige[j].idKategorije)
+                    faktorOcjeneKnjige += parseFloat(kategorijaKnjige.konacnaOcjena)
+                    maksimalniFaktorOcjene += parseFloat(kategorijaKnjige.maksimalnaOcjena)
+                }
+                /* Provjeravamo ako je korisnik ocijenio određenu kateogirju. Ako je faktor ocjene nula, 
+                    to znači da korisnik nije ocjenio određenu kateoriju knjige, ako je veća od nule,
+                    onda se dodaje u listu preporuke. */
+                if (parseFloat(faktorOcjeneKnjige) > 0) {
+                    var elementKnjige = popisSvihKnjiga[i].toObject()
+                    elementKnjige.konacnaOcjena = faktorOcjeneKnjige
+                    elementKnjige.maksimalnaOcjena = maksimalniFaktorOcjene
+                    elementKnjige.postotak = (faktorOcjeneKnjige / maksimalniFaktorOcjene * 100).toFixed(2)
+                    popisKnjigaPreporuke.push(elementKnjige)
+                }
+            }
+
+        }
+        popisKnjigaPreporuke.sort(sortiranjeListe)
+
+        /*  Dohvaćam string naziva kateogrija za svaku pojedinu knjigu 
+            koja se nalazi u listi preporuke. */
+        for (var i in popisKnjigaPreporuke) {
+            var popisKategorijaPreporuke = await Posjeduje.find({ idKnjige: popisKnjigaPreporuke[i]._id })
+            var stringKategorije = ""
+            for (var j in popisKategorijaPreporuke) {
+                var podaciKateogirje = await Kategorija.findById(popisKategorijaPreporuke[j].idKategorije)
+                if (j == (popisKategorijaPreporuke.length - 1)) {
+                    stringKategorije += podaciKateogirje.naziv
+                } else {
+                    stringKategorije += podaciKateogirje.naziv + ", "
+                }
+            }
+            popisKnjigaPreporuke[i].nazivKategorije = stringKategorije
+        }
+        res.render('homepage/osobnePreporuke', { preporucaneKnjige: Array.from(popisKnjigaPreporuke) })
     } else {
         res.render('login/login', { error: '' })
     }
 })
-
-async function algoritamPreporuke(req) {
-    /*  Prvo je potrebno pronaći korisnika, preko korisničkog imena od sesije, zatim se
-        pronalaze svi komentari korinika. */
-    const logiraniKorisnik = req.session.username
-    const korisnik = await Korisnik.findOne({ username: logiraniKorisnik })
-    const popisOcjenaKorisnika = await Ocjena.find({ idKorisnika: korisnik.id })
-
-    /*  Kreira se nova lista koja sadrži id kateogrije i dodijeljenu ocjenu kategorije,
-        gdje može doći do duplih zapisa kategorije, koje će se kasnije filtrirati i
-        zbrojiti ocjene */
-    var listaOcjeneKategorija = []
-    for (var i in popisOcjenaKorisnika) {
-        var kategorijeKnjige = await Posjeduje.find({ idKnjige: popisOcjenaKorisnika[i].idKnjige })
-        for (j in kategorijeKnjige) {
-            var elementKnjige = {}
-            elementKnjige.idKategorije = kategorijeKnjige[j].idKategorije
-            elementKnjige.ocjena = popisOcjenaKorisnika[i].ocjena
-            listaOcjeneKategorija.push(elementKnjige)
-        }
-    }
-
-    /*  Prvo dohvaćam popis svih kategorija, gdje svakoj kategoriji dodajem i zbrajam,
-        iz prethodne liste, ocjene i računam faktor maksimalne ocjene za svaku ocjenjenu
-        kategoriju. */
-    const popisKategorija = await Kategorija.find()
-    var popisKategorijeOcjena = []
-    for (var i in popisKategorija) {
-        idTrenutneKategorije = popisKategorija[i].id
-
-        var ocjeneKaterogije = listaOcjeneKategorija.filter(i => i.idKategorije == idTrenutneKategorije).length
-        var ukupnaOcjena = listaOcjeneKategorija.filter(i => i.idKategorije == idTrenutneKategorije).reduce((a, b) => a + b.ocjena, 0)
-        var konacnaOcjena = ((ukupnaOcjena / 10).toFixed(2) * ukupnaOcjena).toFixed(2)
-
-        var noviElement = popisKategorija[i].toObject()
-        noviElement.idKategorije = idTrenutneKategorije
-        noviElement.konacnaOcjena = konacnaOcjena
-        noviElement.maksimalnaOcjena = ocjeneKaterogije * 10 * ocjeneKaterogije
-        popisKategorijeOcjena.push(noviElement)
-    }
-
-    /*  Tražimo sve nekomentirane / ne ocijenjene knjige od korisnika, koji zadovoljavaju
-        prethodno ocjenjene kategorije ostalih knjiga, koje je korisnik već ocijenio. */
-    var popisKnjigaPreporuke = []
-    const popisSvihKnjiga = await Knjiga.find()
-    for (var i in popisSvihKnjiga) {
-        var idKnjige = popisSvihKnjiga[i].id
-        var ocjenioKnjigu = popisOcjenaKorisnika.filter(i => i.idKnjige == idKnjige)
-        /* Gledaju se samo ne ocjenjene knjige. */
-        if (ocjenioKnjigu.length === 0) {
-            var kategorijeKnjige = await Posjeduje.find({ idKnjige: popisSvihKnjiga[i].id })
-            var faktorOcjeneKnjige = 0
-            var maksimalniFaktorOcjene = 0
-            /* Zbrajanje svih kateogije u jednu kategoriju sa ukupnim faktorom ocjene. */
-            for (var j in kategorijeKnjige) {
-                var kategorijaKnjige = popisKategorijeOcjena.find(i => i.idKategorije == kategorijeKnjige[j].idKategorije)
-                faktorOcjeneKnjige += parseFloat(kategorijaKnjige.konacnaOcjena)
-                maksimalniFaktorOcjene += parseFloat(kategorijaKnjige.maksimalnaOcjena)
-            }
-            /* Provjeravamo ako je korisnik ocijenio određenu kateogirju. Ako je faktor ocjene nula, 
-                to znači da korisnik nije ocjenio određenu kateoriju knjige, ako je veća od nule,
-                onda se dodaje u listu preporuke. */
-            if (parseFloat(faktorOcjeneKnjige) > 0) {
-                var elementKnjige = popisSvihKnjiga[i].toObject()
-                elementKnjige.konacnaOcjena = faktorOcjeneKnjige
-                elementKnjige.maksimalnaOcjena = maksimalniFaktorOcjene
-                elementKnjige.postotak = (faktorOcjeneKnjige / maksimalniFaktorOcjene * 100).toFixed(2)
-                popisKnjigaPreporuke.push(elementKnjige)
-            }
-        }
-
-    }
-    popisKnjigaPreporuke.sort(sortiranjeListe)
-
-    /*  Dohvaćam string naziva kateogrija za svaku pojedinu knjigu 
-        koja se nalazi u listi preporuke. */
-    for (var i in popisKnjigaPreporuke) {
-        var popisKategorijaPreporuke = await Posjeduje.find({ idKnjige: popisKnjigaPreporuke[i]._id })
-        var stringKategorije = ""
-        for (var j in popisKategorijaPreporuke) {
-            var podaciKateogirje = await Kategorija.findById(popisKategorijaPreporuke[j].idKategorije)
-            if (j == (popisKategorijaPreporuke.length - 1)){
-                stringKategorije += podaciKateogirje.naziv
-            } else {
-                stringKategorije += podaciKateogirje.naziv + ", "
-            }
-        }
-        popisKnjigaPreporuke[i].nazivKategorije = stringKategorije
-    }
-
-    return popisKnjigaPreporuke
-}
 
 /*  Funkcija za sortiranje liste po faktoru ocjene, točnije postotak 
     sličnosti knjiga. */
